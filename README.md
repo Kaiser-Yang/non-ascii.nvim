@@ -67,7 +67,9 @@ return {
 
 ## 字典转换
 
-以[wubi.dict.yaml](https://gitee.com/hi-coder/rime-wubi/raw/master/wubi.dict.yaml)为例，
+以
+[wubi.dict.yaml](https://gitee.com/hi-coder/rime-wubi/raw/master/wubi.dict.yaml)
+为例，
 演示如何通过命令行的方式将该字典转换成 `lua` 中的 `table`，并生成 `word` 文件。
 
 首先通过 `sed` 命令删除文件中的注释、空行以及头部信息：
