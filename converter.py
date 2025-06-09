@@ -20,15 +20,20 @@ def convert_to_lua_table(encoding_to_word: dict[str, set], char_mode: bool):
 def main():
     lines = sys.stdin.readlines()
     encoding_to_word = defaultdict(set)
+    word_list = []
     for line in lines:
         if len(line.split()) < 2:
             continue
         word, encoding = line.split()
+        if len(word) > 1:
+            word_list.append(word)
         encoding_to_word[encoding].add(word)
     with open('char.lua', 'w') as f:
         f.write(convert_to_lua_table(encoding_to_word, char_mode=True))
     with open('word.lua', 'w') as f:
         f.write(convert_to_lua_table(encoding_to_word, char_mode=False))
+    with open('word_list.txt', 'w') as f:
+        f.write('\n'.join(sorted(word_list)) + '\n')
 
 
 if __name__ == "__main__":
