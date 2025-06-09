@@ -84,130 +84,80 @@ local function set_cursor(row, col, prev, cur, next, reverse, to_end)
     vim.cmd('normal! ' .. get_cmd(reverse, to_end) .. '<cr>')
     local _, normal_row, normal_col, _, _ =
         unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
+    --- @param r integer
+    --- @param c integer
+    --- @return integer, integer -- row_dis, col_dis
+    local function get_distance(r, c) return math.abs(r - row), math.abs(c - col) end
+    --- @param r integer
+    --- @param c integer
+    --- @param candidata_col_dis_calculator function(integer, integer): integer
+    --- @return integer, integer -- jump_row, jump_col
+    local function selector(r, c, candidata_col_dis_calculator)
+        local candidate_row_dis, candidate_col_dis = get_distance(r, c)
+        local normal_row_dis, normal_col_dis = get_distance(normal_row, normal_col)
+        if candidate_row_dis < normal_row_dis then
+            return r, c
+        elseif candidate_row_dis > normal_row_dis then
+            return normal_row, normal_col
+        else
+            if normal_row ~= row then
+                candidate_col_dis = candidata_col_dis_calculator(c)
+                normal_col_dis = candidata_col_dis_calculator(normal_col)
+            end
+            if candidate_col_dis < normal_col_dis then
+                return r, c
+            else
+                return normal_row, normal_col
+            end
+        end
+    end
+    --- @param candidate? zh.MatchRange
+    --- @param jump_col_extractor function(zh.MatchRange): integer
+    --- @param consider_cur boolean
+    --- @param candidate_col_dis_calculator function(integer): integer
+    --- @return integer, integer -- jump_row, jump_col
+    local function handler(
+        candidate,
+        jump_col_extractor,
+        consider_cur,
+        candidate_col_dis_calculator
+    )
+        if consider_cur and cur and cur.matched and jump_col_extractor(cur) ~= col then
+            return cur.row, jump_col_extractor(cur)
+        else
+            if not candidate or not candidate.matched then
+                return normal_row, normal_col
+            else
+                return selector(
+                    candidate.row,
+                    jump_col_extractor(candidate),
+                    candidate_col_dis_calculator
+                )
+            end
+        end
+    end
     local movement_handlers = {
         ge = function()
-            if not prev or not prev.matched then
-                return normal_row, normal_col
-            else
-                local prev_row_dis = math.abs(prev.row - row)
-                local normal_row_dis = math.abs(normal_row - row)
-                if prev_row_dis == normal_row_dis then
-                    local prev_col_dis = math.abs(prev.start + prev.length - 1 - col)
-                    local normal_col_dis = math.abs(normal_col - col)
-                    if normal_row ~= row then
-                        prev_col_dis = -(prev.start + prev.length - 1)
-                        normal_col_dis = -normal_col
-                    end
-                    if prev_col_dis < normal_col_dis then
-                        return prev.row, prev.start + prev.length - 1
-                    else
-                        return normal_row, normal_col
-                    end
-                elseif prev_row_dis < normal_row_dis then
-                    return prev.row, prev.start + prev.length - 1
-                else
-                    return normal_row, normal_col
-                end
-            end
+            return handler(
+                prev,
+                function(c) return c.start + c.length - 1 end,
+                false,
+                function(c) return -c end
+            )
         end,
         w = function()
-            if not next or not next.matched then
-                return normal_row, normal_col
-            else
-                local next_row_dis = math.abs(next.row - row)
-                local normal_row_dis = math.abs(normal_row - row)
-                if next_row_dis == normal_row_dis then
-                    local next_col_dis = math.abs(next.start - col)
-                    local normal_col_dis = math.abs(normal_col - col)
-                    if normal_row ~= row then
-                        next_col_dis = next.start
-                        normal_col_dis = normal_col
-                    end
-                    if next_col_dis < normal_col_dis then
-                        return next.row, next.start
-                    else
-                        return normal_row, normal_col
-                    end
-                elseif next_row_dis < normal_row_dis then
-                    return next.row, next.start
-                else
-                    return normal_row, normal_col
-                end
-            end
+            return handler(next, function(c) return c.start end, false, function(c) return c end)
         end,
         b = function()
-            if not cur then
-                if prev and prev.matched then return prev.row, prev.start end
-                return normal_row, normal_col
-            end
-            if cur.start == col then
-                if prev and prev.matched then
-                    return prev.row, prev.start
-                else
-                    return normal_row, normal_col
-                end
-            elseif cur.matched then
-                return cur.row, cur.start
-            elseif prev and prev.matched then
-                local prev_row_dis = math.abs(prev.row - row)
-                local normal_row_dis = math.abs(normal_row - row)
-                if prev_row_dis == normal_row_dis then
-                    local prev_col_dis = math.abs(prev.start - col)
-                    local normal_col_dis = math.abs(normal_col - col)
-                    if normal_row ~= row then
-                        prev_col_dis = -prev.start
-                        normal_col_dis = -normal_col
-                    end
-                    if prev_col_dis < normal_col_dis then
-                        return prev.row, prev.start
-                    else
-                        return normal_row, normal_col
-                    end
-                elseif prev_row_dis < normal_row_dis then
-                    return prev.row, prev.start
-                else
-                    return normal_row, normal_col
-                end
-            else
-                return normal_row, normal_col
-            end
+            return handler(prev, function(c) return c.start end, true, function(c) return -c end)
         end,
         e = function()
-            if not cur then
-                if next and next.matched then return next.row, next.start + next.length - 1 end
-                return normal_row, normal_col
-            end
-            if cur.start + cur.length - 1 == col then
-                if next and next.matched then
-                    return next.row, next.start + next.length - 1
-                else
-                    return normal_row, normal_col
-                end
-            elseif cur.matched then
-                return cur.row, cur.start + cur.length - 1
-            elseif next and next.matched then
-                local next_row_dis = math.abs(next.row - row)
-                local normal_row_dis = math.abs(normal_row - row)
-                if next_row_dis == normal_row_dis then
-                    local next_col_dis = math.abs(next.start + next.length - 1 - col)
-                    local normal_col_dis = math.abs(normal_col - col)
-                    if normal_row ~= row then
-                        next_col_dis = next.start + next.length - 1
-                        normal_col_dis = normal_col
-                    end
-                    if next_col_dis < normal_col_dis then
-                        return next.row, next.start + next.length - 1
-                    else
-                        return normal_row, normal_col
-                    end
-                elseif next_row_dis < normal_row_dis then
-                    return next.row, next.start + next.length - 1
-                else
-                    return normal_row, normal_col
-                end
-            else
-                return normal_row, normal_col
-            end
+            return handler(
+                next,
+                function(c) return c.start + c.length - 1 end,
+                true,
+                function(c) return c end
+            )
         end,
     }
     local new_row, new_col = movement_handlers[get_cmd(reverse, to_end)]()
