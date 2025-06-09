@@ -39,7 +39,6 @@ return {
     config = function(_, opts)
         local zh = require('zh')
         zh.setup(opts)
-        local map_set = require('utils').map_set
         local ts_repeat_move = require('nvim-treesitter.textobjects.repeatable_move')
         local next_word, prev_word = ts_repeat_move.make_repeatable_move_pair(
             zh.w,
@@ -49,13 +48,22 @@ return {
             zh.e,
             zh.ge
         )
-        map_set('n', 'w', next_word, { desc = 'Next word' })
-        map_set('n', 'b', prev_word, { desc = 'Previous word' })
-        map_set('n', 'e', next_end_word, { desc = 'Next end word' })
-        map_set('n', 'ge', prev_end_word, { desc = 'Previous end word' })
+        vim.keymap.set('n', 'w', next_word, { desc = 'Next word' })
+        vim.keymap.set('n', 'b', prev_word, { desc = 'Previous word' })
+        vim.keymap.set('n', 'e', next_end_word, { desc = 'Next end word' })
+        vim.keymap.set('n', 'ge', prev_end_word, { desc = 'Previous end word' })
+        -- 如果你不使用 nvim-treesitter-textobjects，可以直接使用
+        -- vim.keymap.set('n', 'w', zh.w, { desc = 'Next word' })
+        -- vim.keymap.set('n', 'b', zh.b, { desc = 'Previous word' })
+        -- vim.keymap.set('n', 'e', zh.e, { desc = 'Next end word' })
+        -- vim.keymap.set('n', 'ge', zh.ge, { desc = 'Previous end word' })
     end,
 }
 ```
+
+如果你不想自己生成 `word` 文件，可以直接使用
+[zh_dict.txt](https://github.com/Kaiser-Yang/dotfiles/blob/main/.config/nvim/dict/zh_dict.txt)。
+该文件是我个人使用的 `word` 文件，包含了常用的中文词语。
 
 ## 字典转换
 
@@ -68,7 +76,7 @@ return {
 sed -e '/^[#-.]/d' -e '/^[[:blank:]]/d' -e '/^.*:/d' wubi.dict.yaml
 ```
 
-接下来我们提取单字的编码：
+接下来我们提取编码：
 
 ```bash
 sed -e '/^[#-.]/d' -e '/^[[:blank:]]/d' -e '/^.*:/d' wubi.dict.yaml | \
