@@ -202,15 +202,18 @@ local function get_prev_cur_next_range(row, col)
     return prev, cur, next
 end
 
+--- Get the final cursor position after executing word jump command <cnt> times.
+--- @param row integer -- Starting row
+--- @param col integer -- Starting column
 --- @param reverse boolean
 --- @param to_end boolean
-local function word_jump(reverse, to_end)
+--- @param cnt integer
+--- @return integer, integer
+local function get_final_cursor_pos(row, col, reverse, to_end, cnt)
     local is_visual = vim.api.nvim_get_mode().mode:match('[vV\22]') ~= nil
     -- If in visual mode, exit visual mode first
     if is_visual then vim.cmd('normal! ') end
 
-    local cnt = vim.v.count1
-    local _, row, col, _, _ = unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
     while cnt > 0 do
         local prev, cur, next = get_prev_cur_next_range(row, col)
         row, col = get_cursor_pos(row, col, prev, cur, next, reverse, to_end)
@@ -219,7 +222,14 @@ local function word_jump(reverse, to_end)
 
     -- Restore the visual mode if it was
     if is_visual then vim.cmd('normal! gv') end
+    return row, col
+end
 
+--- @param reverse boolean
+--- @param to_end boolean
+local function word_jump(reverse, to_end)
+    local _, row, col, _, _ = unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
+    row, col = get_final_cursor_pos(row, col, reverse, to_end, vim.v.count1)
     vim.fn.setcursorcharpos(row, col)
 end
 
