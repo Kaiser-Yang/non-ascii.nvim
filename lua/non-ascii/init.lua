@@ -230,6 +230,9 @@ end
 local function word_jump(reverse, to_end)
     local _, row, col, _, _ = unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
     row, col = get_final_cursor_pos(row, col, reverse, to_end, vim.v.count1)
+    if vim.api.nvim_get_mode().mode:match('o') and to_end then
+        row, col = utils.cursor_pos_after_move(row, col, 1)
+    end
     vim.fn.setcursorcharpos(row, col)
 end
 
@@ -274,7 +277,7 @@ function non_ascii.setup(opts)
         utils.read_words_from_file_list(utils.get_option(current_config.word_jump.word_files))
 end
 
-function non_ascii.w() word_jump(false, false) end
+function non_ascii.w() word_jump(false, vim.api.nvim_get_mode().mode:match('o') ~= nil) end
 
 function non_ascii.b() word_jump(true, false) end
 
