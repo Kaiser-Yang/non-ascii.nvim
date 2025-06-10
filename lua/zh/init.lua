@@ -218,7 +218,7 @@ function zh.setup(opts)
     opts = opts or {}
     current_config = vim.tbl_deep_extend('force', default_config, opts)
     current_config.word_jump._words = utils.read_words_from_file_list(
-        utils.get_option(current_config.word_jump.word_files, current_config.word_jump)
+        utils.get_option(current_config.word_jump.word_files)
     )
 end
 
