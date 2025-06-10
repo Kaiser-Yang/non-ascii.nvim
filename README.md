@@ -3,10 +3,10 @@
 ## 功能
 
 * 单词的跳转：
-    * `non-ascii.w`：跳转到下一个单词开头
-    * `non-ascii.b`：跳转到上一个单词开头
-    * `non-ascii.e`：跳转到下一个单词结尾
-    * `non-ascii.ge`：跳转到上一个单词结尾
+    * `non-ascii.w`：跳转到下一个单词开头。
+    * `non-ascii.b`：跳转到上一个单词开头。
+    * `non-ascii.e`：跳转到下一个单词结尾。
+    * `non-ascii.ge`：跳转到上一个单词结尾。
 
 WIP：
 
