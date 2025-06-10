@@ -74,12 +74,18 @@ local function split_line(row, opts)
 end
 
 --- Return the position of the cursor after executing a normal command.
---- @param cmd 'w' | 'b' | 'e' | 'ge'
+--- @param row integer
+--- @param col integer
+--- @param cmd string
 --- @return integer, integer -- row, col
-local function get_normal_cursor_pos(cmd)
+local function get_normal_cursor_pos(row, col, cmd)
+    local _, original_row, original_col, _, _ =
+        unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
+    vim.fn.setcursorcharpos(row, col)
     vim.cmd('normal! ' .. cmd .. '<cr>')
     local _, normal_row, normal_col, _, _ =
         unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
+    vim.fn.setcursorcharpos(original_row, original_col)
     return normal_row, normal_col
 end
 
@@ -93,7 +99,7 @@ end
 --- @param to_end boolean
 --- @return integer, integer -- new_row, new_col
 local function get_cursor_pos(row, col, prev, cur, next, reverse, to_end)
-    local normal_row, normal_col = get_normal_cursor_pos(get_cmd(reverse, to_end))
+    local normal_row, normal_col = get_normal_cursor_pos(row, col, get_cmd(reverse, to_end))
     --- @param r integer
     --- @param c integer
     --- @return integer, integer -- row_dis, col_dis
