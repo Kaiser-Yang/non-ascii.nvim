@@ -10,7 +10,7 @@ end
 
 --- @param file_path_list string[]
 function utils.read_words_from_file_list(file_path_list)
-    local words = {} --- @as zh.Words
+    local words = {} --- @as non-ascii.Words
     for _, file_path in ipairs(file_path_list) do
         local file = io.open(file_path, 'r')
         if not file then

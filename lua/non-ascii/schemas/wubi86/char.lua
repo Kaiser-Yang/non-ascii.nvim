@@ -1,4 +1,4 @@
---- @type zh.Schema
+--- @type non-ascii.Schema
 return {
     ["a"] = { "工" },
     ["aa"] = { "式" },

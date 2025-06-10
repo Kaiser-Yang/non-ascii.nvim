@@ -1,7 +1,7 @@
-local zh = {}
-local utils = require('zh.utils')
-local default_config = require('zh.config') --- @as zh.Config
-local current_config = default_config --- @as zh.Config
+local non_ascii = {}
+local utils = require('non-ascii.utils')
+local default_config = require('non-ascii.config') --- @as non-ascii.Config
+local current_config = default_config --- @as non-ascii.Config
 
 --- @param reverse boolean
 --- @param to_end boolean
@@ -15,10 +15,10 @@ local get_cmd = function(reverse, to_end)
 end
 
 --- @param row integer
---- @param opts zh.WordJumpConfig
---- @return zh.MatchRange[]
+--- @param opts non-ascii.WordJumpConfig
+--- @return non-ascii.MatchRange[]
 local function split_line(row, opts)
-    local range = {} --- @as zh.MatchRange[]
+    local range = {} --- @as non-ascii.MatchRange[]
     local i = 0
     local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
     local line_len = vim.fn.strchars(line)
@@ -54,7 +54,7 @@ local function split_line(row, opts)
                 })
                 i = i + 1
             else
-                -- Find the next non-ANSCII boundary
+                -- Find the next non-ASCII boundary
                 local length = 1
                 while i + length < line_len and #vim.fn.strcharpart(line, i + length, 1) == 1 do
                     length = length + 1
@@ -86,9 +86,9 @@ end
 --- Get the cursor position after executing a word jump command.
 --- @param row integer
 --- @param col integer
---- @param prev? zh.MatchRange
---- @param cur zh.MatchRange
---- @param next? zh.MatchRange
+--- @param prev? non-ascii.MatchRange
+--- @param cur non-ascii.MatchRange
+--- @param next? non-ascii.MatchRange
 --- @param reverse boolean
 --- @param to_end boolean
 --- @return integer, integer -- new_row, new_col
@@ -121,8 +121,8 @@ local function get_cursor_pos(row, col, prev, cur, next, reverse, to_end)
             end
         end
     end
-    --- @param candidate? zh.MatchRange
-    --- @param jump_col_extractor function(zh.MatchRange): integer
+    --- @param candidate? non-ascii.MatchRange
+    --- @param jump_col_extractor function(non-ascii.MatchRange): integer
     --- @param consider_cur boolean
     --- @param candidate_col_dis_calculator function(integer): integer
     --- @return integer, integer -- jump_row, jump_col
@@ -176,7 +176,7 @@ end
 --- Get the previous, current, and next match ranges based on the cursor position.
 --- @param row integer
 --- @param col integer
---- @return zh.MatchRange, zh.MatchRange, zh.MatchRange
+--- @return non-ascii.MatchRange, non-ascii.MatchRange, non-ascii.MatchRange
 local function get_prev_cur_next_range(row, col, opts)
     local current_line_range = split_line(row, opts)
     local prev, cur, next
@@ -197,7 +197,7 @@ local function get_prev_cur_next_range(row, col, opts)
     return prev, cur, next
 end
 
---- @param opts? zh.WordJumpConfig
+--- @param opts? non-ascii.WordJumpConfig
 --- @param reverse? boolean
 local function word_jump(opts, reverse, to_end)
     opts = opts or {}
@@ -213,8 +213,8 @@ local function word_jump(opts, reverse, to_end)
     vim.fn.setcursorcharpos(row, col)
 end
 
---- @param opts? zh.Config
-function zh.setup(opts)
+--- @param opts? non-ascii.Config
+function non_ascii.setup(opts)
     opts = opts or {}
     current_config = vim.tbl_deep_extend('force', default_config, opts)
     current_config.word_jump._words = utils.read_words_from_file_list(
@@ -222,24 +222,28 @@ function zh.setup(opts)
     )
 end
 
---- @param opts? zh.WordJumpConfig
-function zh.w(opts) word_jump(opts, false, false) end
+--- @param opts? non-ascii.WordJumpConfig
+function non_ascii.w(opts) word_jump(opts, false, false) end
 
---- @param opts? zh.WordJumpConfig
-function zh.b(opts) word_jump(opts, true, false) end
+--- @param opts? non-ascii.WordJumpConfig
+function non_ascii.b(opts) word_jump(opts, true, false) end
 
---- @param opts? zh.WordJumpConfig
-function zh.e(opts) word_jump(opts, false, true) end
+--- @param opts? non-ascii.WordJumpConfig
+function non_ascii.e(opts) word_jump(opts, false, true) end
 
---- @param opts? zh.WordJumpConfig
-function zh.ge(opts) word_jump(opts, true, true) end
+--- @param opts? non-ascii.WordJumpConfig
+function non_ascii.ge(opts) word_jump(opts, true, true) end
 
-function zh.f() end
+function non_ascii.iw() end
 
-function zh.F() end
+function non_ascii.aw() end
 
-function zh.t() end
+function non_ascii.f() end
 
-function zh.T() end
+function non_ascii.F() end
 
-return zh
+function non_ascii.t() end
+
+function non_ascii.T() end
+
+return non_ascii

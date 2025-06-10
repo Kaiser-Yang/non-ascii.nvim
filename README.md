@@ -1,12 +1,12 @@
-# zh.nvim
+# non-ascii.nvim
 
 ## 功能
 
 * 单词的跳转：
-    * `zh.w`：跳转到下一个单词开头
-    * `zh.b`：跳转到上一个单词开头
-    * `zh.e`：跳转到下一个单词结尾
-    * `zh.ge`：跳转到上一个单词结尾
+    * `non-ascii.w`：跳转到下一个单词开头
+    * `non-ascii.b`：跳转到上一个单词开头
+    * `non-ascii.e`：跳转到下一个单词结尾
+    * `non-ascii.ge`：跳转到上一个单词结尾
 
 WIP：
 
@@ -21,7 +21,7 @@ WIP：
 
 ```lua
 return {
-    'Kaiser-Yang/zh.nvim',
+    'Kaiser-Yang/non-ascii.nvim',
     dependencies = {
         -- 推荐
         -- 可以使用 ; 和 , 来重复上一个操作
@@ -37,26 +37,26 @@ return {
         }
     },
     config = function(_, opts)
-        local zh = require('zh')
-        zh.setup(opts)
+        local non_ascii= require('non-ascii')
+        non_ascii.setup(opts)
         local ts_repeat_move = require('nvim-treesitter.textobjects.repeatable_move')
         local next_word, prev_word = ts_repeat_move.make_repeatable_move_pair(
-            zh.w,
-            zh.b
+            non_ascii.w,
+            non_ascii.b
         )
         local next_end_word, prev_end_word = ts_repeat_move.make_repeatable_move_pair(
-            zh.e,
-            zh.ge
+            non_ascii.e,
+            non_ascii.ge
         )
         vim.keymap.set({ 'n', 'x', 'o' }, 'w', next_word, { desc = 'Next word' })
         vim.keymap.set({ 'n', 'x', 'o' }, 'b', prev_word, { desc = 'Previous word' })
         vim.keymap.set({ 'n', 'x', 'o' }, 'e', next_end_word, { desc = 'Next end word' })
         vim.keymap.set({ 'n', 'x', 'o' }, 'ge', prev_end_word, { desc = 'Previous end word' })
         -- 如果你不使用 nvim-treesitter-textobjects，可以直接使用
-        -- vim.keymap.set({ 'n', 'x', 'o' }, 'w', zh.w, { desc = 'Next word' })
-        -- vim.keymap.set({ 'n', 'x', 'o' }, 'b', zh.b, { desc = 'Previous word' })
-        -- vim.keymap.set({ 'n', 'x', 'o' }, 'e', zh.e, { desc = 'Next end word' })
-        -- vim.keymap.set({ 'n', 'x', 'o' }, 'ge', zh.ge, { desc = 'Previous end word' })
+        -- vim.keymap.set({ 'n', 'x', 'o' }, 'w', non_ascii.w, { desc = 'Next word' })
+        -- vim.keymap.set({ 'n', 'x', 'o' }, 'b', non_ascii.b, { desc = 'Previous word' })
+        -- vim.keymap.set({ 'n', 'x', 'o' }, 'e', non_ascii.e, { desc = 'Next end word' })
+        -- vim.keymap.set({ 'n', 'x', 'o' }, 'ge', non_ascii.ge, { desc = 'Previous end word' })
     end,
 }
 ```

@@ -5,7 +5,7 @@ from collections import defaultdict
 
 def convert_to_lua_table(encoding_to_word: dict[str, set], char_mode: bool):
     lines = []
-    lines.append("--- @type zh.Schema")
+    lines.append("--- @type non-ascii.Schema")
     lines.append("return {")
     for encoding, words in encoding_to_word.items():
         filtered_words = {word for word in words if (char_mode and len(word)) == 1 or
