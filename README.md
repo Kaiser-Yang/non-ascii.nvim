@@ -7,6 +7,8 @@
     * `non-ascii.b`：跳转到上一个单词开头。
     * `non-ascii.e`：跳转到下一个单词结尾。
     * `non-ascii.ge`：跳转到上一个单词结尾。
+* `motion`：
+    * `non-ascii.iw`：在单词中。
 
 WIP：
 
@@ -17,8 +19,6 @@ WIP：
 * 字符的跳转
 * 集成 [flash.nvim](https://github.com/folke/flash.nvim)
 * 支持所以自定义的输入方案，默认提供86五笔，全拼，小鹤双拼。
-* `motion`：
-    * `non-ascii.iw`：在单词中。
     * `non-ascii.aw`：与 `non-ascii.iw` 相同。
     * `non-ascii.inside_sentence`：在句子中。
     * `non-ascii.around_sentence`：在句子周围，会选中分隔符。
@@ -65,6 +65,7 @@ return {
         -- vim.keymap.set({ 'n', 'x', 'o' }, 'b', non_ascii.b, { desc = 'Previous word' })
         -- vim.keymap.set({ 'n', 'x', 'o' }, 'e', non_ascii.e, { desc = 'Next end word' })
         -- vim.keymap.set({ 'n', 'x', 'o' }, 'ge', non_ascii.ge, { desc = 'Previous end word' })
+        vim.keymap.set({ 'x', 'o' }, 'iw', non_ascii.iw, { desc = 'Inside a word' })
     end,
 }
 ```

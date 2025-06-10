@@ -233,6 +233,39 @@ local function word_jump(reverse, to_end)
     vim.fn.setcursorcharpos(row, col)
 end
 
+local function get_next_iw_pos(row, col, reverse)
+    local tmp_row_1, tmp_col_1 = get_normal_cursor_pos(row, col, 'e')
+    local tmp_row_2, tmp_col_2 = get_normal_cursor_pos(row, col, 'w')
+    tmp_row_2, tmp_col_2 = utils.cursor_pos_after_move(tmp_row_2, tmp_col_2, -1)
+    local tmp_row_3, tmp_col_3 = get_normal_cursor_pos(row, col, 'e')
+    tmp_row_3, tmp_col_3 = get_normal_cursor_pos(tmp_row_3, tmp_col_3, 'ge')
+    if reverse then
+        tmp_row_1, tmp_col_1 = get_normal_cursor_pos(row, col, 'b')
+        tmp_row_2, tmp_col_2 = get_normal_cursor_pos(row, col, 'ge')
+        tmp_row_2, tmp_col_2 = utils.cursor_pos_after_move(tmp_row_2, tmp_col_2, 1)
+        tmp_row_3, tmp_col_3 = get_normal_cursor_pos(row, col, 'b')
+        tmp_row_3, tmp_col_3 = get_normal_cursor_pos(tmp_row_3, tmp_col_3, 'w')
+    end
+    if
+        utils.cursor_pos_compare(tmp_row_3, tmp_col_3, row, col) == 0
+        or utils.cursor_pos_compare(tmp_row_1, tmp_col_1, row, col) == 0
+    then
+        return row, col
+    elseif
+        (
+            not reverse
+                and utils.cursor_pos_compare(tmp_row_1, tmp_col_1, tmp_row_2, tmp_col_2) <= 0
+            or reverse
+                and utils.cursor_pos_compare(tmp_row_1, tmp_col_1, tmp_row_2, tmp_col_2) >= 0
+
+        ) and utils.cursor_pos_compare(tmp_row_1, tmp_col_1, row, col) ~= 0
+    then
+        return tmp_row_1, tmp_col_1
+    else
+        return tmp_row_2, tmp_col_2
+    end
+end
+
 --- @param opts? non-ascii.Config
 function non_ascii.setup(opts)
     opts = opts or {}
@@ -249,12 +282,75 @@ function non_ascii.e() word_jump(false, true) end
 
 function non_ascii.ge() word_jump(true, true) end
 
-function non_ascii.iw() end
-
-function non_ascii.aw()
-    -- For non separated words, we can use the same logic as `iw`
-    non_ascii.iw()
+function non_ascii.iw()
+    local _, cur_row, cur_col, _, _ =
+        unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
+    local _, cur, _ = get_prev_cur_next_range(cur_row, cur_col)
+    local is_visual = vim.api.nvim_get_mode().mode:match('[vV\22]') ~= nil
+    local visual_start_row, visual_start_col
+    local not_selected
+    local reverse = false
+    if is_visual then
+        local pos = vim.fn.getcharpos('v')
+        visual_start_row, visual_start_col = pos[2], pos[3]
+        if cur_row == visual_start_row and cur_col == visual_start_col then not_selected = true end
+        reverse = utils.cursor_pos_compare(visual_start_row, visual_start_col, cur_row, cur_col) > 0
+    end
+    local start_row, start_col, end_row, end_col
+    local cnt = vim.v.count1 - 1
+    if not is_visual or not_selected then
+        if not cur then
+            -- This is an empty line
+            start_row, start_col = cur_row, cur_col
+            end_row, end_col = cur_row, cur_col
+            if is_visual then cnt = cnt + 1 end
+        elseif cur.matched then
+            start_row, start_col = cur.row, cur.start
+            end_row, end_col = cur.row, cur.start + cur.length - 1
+            if is_visual and cur.length == 1 then cnt = cnt + 1 end
+        else
+            start_row, start_col = get_next_iw_pos(cur_row, cur_col, true)
+            end_row, end_col = get_next_iw_pos(cur_row, cur_col, false)
+            if
+                is_visual
+                and utils.cursor_pos_compare(start_row, start_col, end_row, end_col) == 0
+            then
+                cnt = cnt + 1
+            end
+        end
+    else
+        start_row, start_col = visual_start_row, visual_start_col
+        if not cur then
+            -- This is an empty line
+            end_row, end_col = cur_row, cur_col
+        elseif cur.matched then
+            end_row, end_col = cur.row, (reverse and cur.start or cur.start + cur.length - 1)
+        else
+            end_row, end_col = get_next_iw_pos(cur_row, cur_col, reverse)
+        end
+        if utils.cursor_pos_compare(end_row, end_col, cur_row, cur_col) == 0 then cnt = cnt + 1 end
+    end
+    while cnt > 0 do
+        end_row, end_col = utils.cursor_pos_after_move(end_row, end_col, reverse and -1 or 1)
+        _, cur, _ = get_prev_cur_next_range(end_row, end_col)
+        if not cur then
+            -- This is an empty line,
+            -- so we do nothing
+        elseif cur.matched then
+            end_row, end_col = cur.row, (reverse and cur.start or cur.start + cur.length - 1)
+        else
+            end_row, end_col = get_next_iw_pos(end_row, end_col, reverse)
+        end
+        cnt = cnt - 1
+    end
+    if is_visual then vim.cmd('normal! ') end
+    vim.cmd('normal! v')
+    vim.fn.setcursorcharpos(start_row, start_col)
+    vim.cmd('normal! o')
+    vim.fn.setcursorcharpos(end_row, end_col)
 end
+
+function non_ascii.aw() end
 
 function non_ascii.f() end
 
