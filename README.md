@@ -10,10 +10,18 @@
 
 WIP：
 
+* 句子跳转: 
+    * `non-ascii.next_sentence`：跳转到上一个句子开头
+    * `non-ascii.prev_sentence`：跳转到下一个句子开头
 * 中文搜索
 * 字符的跳转
 * 集成 [flash.nvim](https://github.com/folke/flash.nvim)
 * 支持所以自定义的输入方案，默认提供86五笔，全拼，小鹤双拼。
+* `motion`：
+    * `non-ascii.iw`：在单词中。
+    * `non-ascii.aw`：与 `non-ascii.iw` 相同。
+    * `non-ascii.inside_sentence`：在句子中。
+    * `non-ascii.around_sentence`：在句子周围，会选中分隔符。
 
 ## 快速开始
 
