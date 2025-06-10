@@ -81,7 +81,7 @@ local function get_normal_cursor_pos(row, col, cmd)
     local _, original_row, original_col, _, _ =
         unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
     vim.fn.setcursorcharpos(row, col)
-    vim.cmd('normal! ' .. cmd .. '<cr>')
+    vim.cmd('normal! ' .. cmd)
     local _, normal_row, normal_col, _, _ =
         unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
     vim.fn.setcursorcharpos(original_row, original_col)
@@ -205,6 +205,10 @@ end
 --- @param reverse boolean
 --- @param to_end boolean
 local function word_jump(reverse, to_end)
+    local is_visual = vim.api.nvim_get_mode().mode:match('[vV\22]') ~= nil
+    -- If in visual mode, exit visual mode first
+    if is_visual then vim.cmd('normal! ') end
+
     local cnt = vim.v.count1
     local _, row, col, _, _ = unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
     while cnt > 0 do
@@ -212,6 +216,10 @@ local function word_jump(reverse, to_end)
         row, col = get_cursor_pos(row, col, prev, cur, next, reverse, to_end)
         cnt = cnt - 1
     end
+
+    -- Restore the visual mode if it was
+    if is_visual then vim.cmd('normal! gv') end
+
     vim.fn.setcursorcharpos(row, col)
 end
 
