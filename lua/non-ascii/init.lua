@@ -15,19 +15,18 @@ local get_cmd = function(reverse, to_end)
 end
 
 --- @param row integer
---- @param opts non-ascii.WordJumpConfig
 --- @return non-ascii.MatchRange[]
-local function split_line(row, opts)
+local function split_line(row)
     local range = {} --- @as non-ascii.MatchRange[]
     local i = 0
     local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
     local line_len = vim.fn.strchars(line)
     while i < line_len do
         local matched = false
-        for _, length in ipairs(opts.preffered_jump_length) do
+        for _, length in ipairs(current_config.word_jump.preffered_jump_length) do
             if i + length <= line_len then
                 local word = vim.fn.strcharpart(line, i, length)
-                if opts._words[word] then
+                if current_config.word_jump._words[word] then
                     table.insert(range, {
                         row = row,
                         -- convert to 1-indexed
@@ -93,7 +92,7 @@ end
 --- @param row integer
 --- @param col integer
 --- @param prev? non-ascii.MatchRange
---- @param cur non-ascii.MatchRange
+--- @param cur? non-ascii.MatchRange
 --- @param next? non-ascii.MatchRange
 --- @param reverse boolean
 --- @param to_end boolean
@@ -183,8 +182,8 @@ end
 --- @param row integer
 --- @param col integer
 --- @return non-ascii.MatchRange, non-ascii.MatchRange, non-ascii.MatchRange
-local function get_prev_cur_next_range(row, col, opts)
-    local current_line_range = split_line(row, opts)
+local function get_prev_cur_next_range(row, col)
+    local current_line_range = split_line(row)
     local prev, cur, next
     for i, range in ipairs(current_line_range) do
         if range.start <= col and col < range.start + range.length then
@@ -194,25 +193,22 @@ local function get_prev_cur_next_range(row, col, opts)
         end
     end
     if prev == nil and row - 1 >= 1 then
-        local last_line_range = split_line(row - 1, opts)
+        local last_line_range = split_line(row - 1)
         prev = last_line_range[#last_line_range]
     end
     if next == nil and row + 1 <= vim.api.nvim_buf_line_count(0) then
-        next = split_line(row + 1, opts)[1]
+        next = split_line(row + 1)[1]
     end
     return prev, cur, next
 end
 
---- @param opts? non-ascii.WordJumpConfig
---- @param reverse? boolean
-local function word_jump(opts, reverse, to_end)
-    opts = opts or {}
-    reverse = reverse or false
-    opts = vim.tbl_deep_extend('force', current_config.word_jump, opts)
+--- @param reverse boolean
+--- @param to_end boolean
+local function word_jump(reverse, to_end)
     local cnt = vim.v.count1
     local _, row, col, _, _ = unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
     while cnt > 0 do
-        local prev, cur, next = get_prev_cur_next_range(row, col, opts)
+        local prev, cur, next = get_prev_cur_next_range(row, col)
         row, col = get_cursor_pos(row, col, prev, cur, next, reverse, to_end)
         cnt = cnt - 1
     end
@@ -227,21 +223,20 @@ function non_ascii.setup(opts)
         utils.read_words_from_file_list(utils.get_option(current_config.word_jump.word_files))
 end
 
---- @param opts? non-ascii.WordJumpConfig
-function non_ascii.w(opts) word_jump(opts, false, false) end
+function non_ascii.w() word_jump(false, false) end
 
---- @param opts? non-ascii.WordJumpConfig
-function non_ascii.b(opts) word_jump(opts, true, false) end
+function non_ascii.b() word_jump(true, false) end
 
---- @param opts? non-ascii.WordJumpConfig
-function non_ascii.e(opts) word_jump(opts, false, true) end
+function non_ascii.e() word_jump(false, true) end
 
---- @param opts? non-ascii.WordJumpConfig
-function non_ascii.ge(opts) word_jump(opts, true, true) end
+function non_ascii.ge() word_jump(true, true) end
 
 function non_ascii.iw() end
 
-function non_ascii.aw() end
+function non_ascii.aw()
+    -- For non separated words, we can use the same logic as `iw`
+    non_ascii.iw()
+end
 
 function non_ascii.f() end
 
