@@ -54,7 +54,7 @@ local function split_line(row, opts)
                 })
                 i = i + 1
             else
-                -- Find the next word boundary
+                -- Find the next non-ANSCII boundary
                 local length = 1
                 while i + length < line_len and #vim.fn.strcharpart(line, i + length, 1) == 1 do
                     length = length + 1
@@ -73,6 +73,17 @@ local function split_line(row, opts)
     return range
 end
 
+--- Return the position of the cursor after executing a normal command.
+--- @param cmd 'w' | 'b' | 'e' | 'ge'
+--- @return integer, integer -- row, col
+local function get_normal_cursor_pos(cmd)
+    vim.cmd('normal! ' .. cmd .. '<cr>')
+    local _, normal_row, normal_col, _, _ =
+        unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
+    return normal_row, normal_col
+end
+
+--- Get the cursor position after executing a word jump command.
 --- @param row integer
 --- @param col integer
 --- @param prev? zh.MatchRange
@@ -80,10 +91,9 @@ end
 --- @param next? zh.MatchRange
 --- @param reverse boolean
 --- @param to_end boolean
-local function set_cursor(row, col, prev, cur, next, reverse, to_end)
-    vim.cmd('normal! ' .. get_cmd(reverse, to_end) .. '<cr>')
-    local _, normal_row, normal_col, _, _ =
-        unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
+--- @return integer, integer -- new_row, new_col
+local function get_cursor_pos(row, col, prev, cur, next, reverse, to_end)
+    local normal_row, normal_col = get_normal_cursor_pos(get_cmd(reverse, to_end))
     --- @param r integer
     --- @param c integer
     --- @return integer, integer -- row_dis, col_dis
@@ -160,11 +170,10 @@ local function set_cursor(row, col, prev, cur, next, reverse, to_end)
             )
         end,
     }
-    local new_row, new_col = movement_handlers[get_cmd(reverse, to_end)]()
-    if not new_row or not new_col then return end
-    vim.fn.setcursorcharpos(new_row, new_col)
+    return movement_handlers[get_cmd(reverse, to_end)]()
 end
 
+--- Get the previous, current, and next match ranges based on the cursor position.
 --- @param row integer
 --- @param col integer
 --- @return zh.MatchRange, zh.MatchRange, zh.MatchRange
@@ -195,12 +204,13 @@ local function word_jump(opts, reverse, to_end)
     reverse = reverse or false
     opts = vim.tbl_deep_extend('force', current_config.word_jump, opts)
     local cnt = vim.v.count1
+    local _, row, col, _, _ = unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
     while cnt > 0 do
-        local _, row, col, _, _ = unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
         local prev, cur, next = get_prev_cur_next_range(row, col, opts)
-        set_cursor(row, col, prev, cur, next, reverse, to_end)
+        row, col = get_cursor_pos(row, col, prev, cur, next, reverse, to_end)
         cnt = cnt - 1
     end
+    vim.fn.setcursorcharpos(row, col)
 end
 
 --- @param opts? zh.Config
