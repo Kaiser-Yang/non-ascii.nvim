@@ -48,15 +48,15 @@ return {
             zh.e,
             zh.ge
         )
-        vim.keymap.set('n', 'w', next_word, { desc = 'Next word' })
-        vim.keymap.set('n', 'b', prev_word, { desc = 'Previous word' })
-        vim.keymap.set('n', 'e', next_end_word, { desc = 'Next end word' })
-        vim.keymap.set('n', 'ge', prev_end_word, { desc = 'Previous end word' })
+        vim.keymap.set({ 'n', 'x', 'o' }, 'w', next_word, { desc = 'Next word' })
+        vim.keymap.set({ 'n', 'x', 'o' }, 'b', prev_word, { desc = 'Previous word' })
+        vim.keymap.set({ 'n', 'x', 'o' }, 'e', next_end_word, { desc = 'Next end word' })
+        vim.keymap.set({ 'n', 'x', 'o' }, 'ge', prev_end_word, { desc = 'Previous end word' })
         -- 如果你不使用 nvim-treesitter-textobjects，可以直接使用
-        -- vim.keymap.set('n', 'w', zh.w, { desc = 'Next word' })
-        -- vim.keymap.set('n', 'b', zh.b, { desc = 'Previous word' })
-        -- vim.keymap.set('n', 'e', zh.e, { desc = 'Next end word' })
-        -- vim.keymap.set('n', 'ge', zh.ge, { desc = 'Previous end word' })
+        -- vim.keymap.set({ 'n', 'x', 'o' }, 'w', zh.w, { desc = 'Next word' })
+        -- vim.keymap.set({ 'n', 'x', 'o' }, 'b', zh.b, { desc = 'Previous word' })
+        -- vim.keymap.set({ 'n', 'x', 'o' }, 'e', zh.e, { desc = 'Next end word' })
+        -- vim.keymap.set({ 'n', 'x', 'o' }, 'ge', zh.ge, { desc = 'Previous end word' })
     end,
 }
 ```
