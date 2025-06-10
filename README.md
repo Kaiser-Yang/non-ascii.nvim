@@ -10,7 +10,7 @@
 
 WIP：
 
-* 句子跳转: 
+* 句子跳转:
     * `non-ascii.next_sentence`：跳转到上一个句子开头
     * `non-ascii.prev_sentence`：跳转到下一个句子开头
 * 中文搜索
