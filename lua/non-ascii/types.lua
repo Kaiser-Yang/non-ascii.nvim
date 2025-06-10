@@ -1,6 +1,6 @@
 --- @alias non-ascii.Encoding table<string, string[]>
 --- @alias non-ascii.Decoding table<string, string[]>
---- @alias non-ascii.Schema non_ascii.Decoding
+--- @alias non-ascii.Schema non-ascii.Decoding
 --- @alias non-ascii.Words table<string, boolean>
 
 --- @class non-ascii.WordJumpConfig
