@@ -88,7 +88,7 @@ end
 function utils.cursor_pos_after_move(row, col, delta)
     local line_count = vim.api.nvim_buf_line_count(0)
     local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
-    local line_len = vim.fn.strchars(line)
+    local line_len = vim.fn.strchars(line) + (utils.is_visual() and 1 or 0)
     if line_len == 0 then line_len = 1 end
     while delta ~= 0 do
         if delta > 0 then
@@ -98,7 +98,7 @@ function utils.cursor_pos_after_move(row, col, delta)
                 row = row + 1
                 col = 1
                 line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
-                line_len = vim.fn.strchars(line)
+                line_len = vim.fn.strchars(line) + (utils.is_visual() and 1 or 0)
                 if line_len == 0 then line_len = 1 end
             else
                 break -- No more lines to move to
@@ -110,7 +110,7 @@ function utils.cursor_pos_after_move(row, col, delta)
             elseif row > 1 then
                 row = row - 1
                 line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
-                line_len = vim.fn.strchars(line)
+                line_len = vim.fn.strchars(line) + (utils.is_visual() and 1 or 0)
                 if line_len == 0 then line_len = 1 end
                 col = line_len
             else
@@ -191,7 +191,7 @@ end
 function utils.get_end_of_file()
     local line_count = vim.api.nvim_buf_line_count(0)
     local last_line = vim.api.nvim_buf_get_lines(0, line_count - 1, line_count, false)[1] or ''
-    local last_line_len = vim.fn.strchars(last_line)
+    local last_line_len = vim.fn.strchars(last_line) + (utils.is_visual() and 1 or 0)
     if last_line_len == 0 then last_line_len = 1 end
     return line_count, last_line_len
 end
