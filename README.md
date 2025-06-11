@@ -9,6 +9,7 @@
     * `non-ascii.ge`：跳转到上一个单词结尾。
 * `motion`：
     * `non-ascii.iw`：在单词中。
+    * `non-ascii.aw`：在单词周围，会选中分隔符。
 
 WIP：
 
@@ -19,7 +20,6 @@ WIP：
 * 字符的跳转
 * 集成 [flash.nvim](https://github.com/folke/flash.nvim)
 * 支持所以自定义的输入方案，默认提供86五笔，全拼，小鹤双拼。
-    * `non-ascii.aw`：与 `non-ascii.iw` 相同。
     * `non-ascii.inside_sentence`：在句子中。
     * `non-ascii.around_sentence`：在句子周围，会选中分隔符。
 
@@ -38,7 +38,7 @@ return {
         'nvim-treesitter/nvim-treesitter-textobjects',
     },
     opts = {
-        word_jump = {
+        word = {
             -- word 文件每行为一个中文词语
             -- 查看 字典转换 部分了解如何生成 word 文件
             word_files = { vim.fn.expand('path/to/your/word/file') },
@@ -56,16 +56,24 @@ return {
             non_ascii.e,
             non_ascii.ge
         )
-        vim.keymap.set({ 'n', 'x', 'o' }, 'w', next_word, { desc = 'Next word' })
-        vim.keymap.set({ 'n', 'x', 'o' }, 'b', prev_word, { desc = 'Previous word' })
-        vim.keymap.set({ 'n', 'x', 'o' }, 'e', next_end_word, { desc = 'Next end word' })
-        vim.keymap.set({ 'n', 'x', 'o' }, 'ge', prev_end_word, { desc = 'Previous end word' })
+        vim.keymap.set({ 'n', 'x' }, 'w', next_word, { desc = 'Next word' })
+        vim.keymap.set({ 'n', 'x' }, 'w', next_word, { desc = 'Next word' })
+        vim.keymap.set({ 'n', 'x' }, 'b', prev_word, { desc = 'Previous word' })
+        vim.keymap.set({ 'n', 'x' }, 'e', next_end_word, { desc = 'Next end word' })
+        vim.keymap.set({ 'n', 'x' }, 'ge', prev_end_word, { desc = 'Previous end word' })
         -- 如果你不使用 nvim-treesitter-textobjects，可以直接使用
-        -- vim.keymap.set({ 'n', 'x', 'o' }, 'w', non_ascii.w, { desc = 'Next word' })
-        -- vim.keymap.set({ 'n', 'x', 'o' }, 'b', non_ascii.b, { desc = 'Previous word' })
-        -- vim.keymap.set({ 'n', 'x', 'o' }, 'e', non_ascii.e, { desc = 'Next end word' })
-        -- vim.keymap.set({ 'n', 'x', 'o' }, 'ge', non_ascii.ge, { desc = 'Previous end word' })
+        -- vim.keymap.set({ 'n', 'x' }, 'w', non_ascii.w, { desc = 'Next word' })
+        -- vim.keymap.set({ 'n', 'x' }, 'b', non_ascii.b, { desc = 'Previous word' })
+        -- vim.keymap.set({ 'n', 'x' }, 'e', non_ascii.e, { desc = 'Next end word' })
+        -- vim.keymap.set({ 'n', 'x' }, 'ge', non_ascii.ge, { desc = 'Previous end word' })
+
+        -- 在 operator 模式下，w 的行为和 e 的行为是一样的，
+        vim.keymap.set('o', 'w', non_ascii.e, { desc = 'Next word' })
+        vim.keymap.set('o', 'b', non_ascii.b, { desc = 'Previous word' })
+        vim.keymap.set('o', 'e', non_ascii.e, { desc = 'Next end word' })
+        vim.keymap.set('o', 'ge', non_ascii.ge, { desc = 'Previous end word' })
         vim.keymap.set({ 'x', 'o' }, 'iw', non_ascii.iw, { desc = 'Inside a word' })
+        vim.keymap.set({ 'x', 'o' }, 'aw', non_ascii.aw, { desc = 'Around a word' })
     end,
 }
 ```

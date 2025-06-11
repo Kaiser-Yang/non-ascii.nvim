@@ -1,0 +1,4 @@
+--- @class non-ascii.MatchRange
+--- @field row integer
+--- @field col integer
+--- @field length integer

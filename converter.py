@@ -25,8 +25,7 @@ def main():
         if len(line.split()) < 2:
             continue
         word, encoding = line.split()
-        if len(word) > 1:
-            word_list.append(word)
+        word_list.append(word)
         encoding_to_word[encoding].add(word)
     with open('char.lua', 'w') as f:
         f.write(convert_to_lua_table(encoding_to_word, char_mode=True))

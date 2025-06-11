@@ -57,6 +57,15 @@ function utils.normalize_content_range(row1, col1, row2, col2)
     return row1, col1, row2, col2
 end
 
+--- @param a_row1 integer
+--- @param a_col1 integer
+--- @param a_row2 integer
+--- @param a_col2 integer
+--- @param b_row1 integer
+--- @param b_col1 integer
+--- @param b_row2 integer
+--- @param b_col2 integer
+--- @return boolean Returns true if content range A is completely within content range B.
 function utils.content_range_a_in_b(a_row1, a_col1, a_row2, a_col2, b_row1, b_col1, b_row2, b_col2)
     a_row1, a_col1, a_row2, a_col2 = utils.normalize_content_range(a_row1, a_col1, a_row2, a_col2)
     b_row1, b_col1, b_row2, b_col2 = utils.normalize_content_range(b_row1, b_col1, b_row2, b_col2)
@@ -80,6 +89,7 @@ function utils.cursor_pos_after_move(row, col, delta)
     local line_count = vim.api.nvim_buf_line_count(0)
     local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
     local line_len = vim.fn.strchars(line)
+    if line_len == 0 then line_len = 1 end
     while delta ~= 0 do
         if delta > 0 then
             if col < line_len then
@@ -89,6 +99,7 @@ function utils.cursor_pos_after_move(row, col, delta)
                 col = 1
                 line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
                 line_len = vim.fn.strchars(line)
+                if line_len == 0 then line_len = 1 end
             else
                 break -- No more lines to move to
             end
@@ -100,6 +111,7 @@ function utils.cursor_pos_after_move(row, col, delta)
                 row = row - 1
                 line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
                 line_len = vim.fn.strchars(line)
+                if line_len == 0 then line_len = 1 end
                 col = line_len
             else
                 break -- No more lines to move to
@@ -109,5 +121,108 @@ function utils.cursor_pos_after_move(row, col, delta)
     end
     return row, col
 end
+
+--- @param row integer
+--- @param is_separator function(string): boolean
+--- @param preffered_jump_length integer[]
+--- @param words non-ascii.Words
+--- @return non-ascii.MatchRange[]
+function utils.split_line(row, is_separator, preffered_jump_length, words)
+    local ranges = {} --- @as non-ascii.MatchRange[]
+    local i = 0
+    local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
+    local line_len = vim.fn.strchars(line)
+    if line_len == 0 and not is_separator('') then
+        table.insert(ranges, {
+            row = row,
+            col = 1,
+            length = 1,
+        })
+    end
+    while i < line_len do
+        local current_range --- @as non-ascii.MatchRange
+        for _, length in ipairs(preffered_jump_length) do
+            if i + length - 1 < line_len then
+                local word = vim.fn.strcharpart(line, i, length)
+                if words[word] then
+                    current_range = {
+                        row = row,
+                        col = i + 1, -- convert to 1-indexed
+                        length = length,
+                    }
+                    i = i + length
+                    break
+                end
+            end
+        end
+        if not current_range then
+            if is_separator(vim.fn.strcharpart(line, i, 1)) then
+                while
+                    i < line_len
+                    and is_separator(vim.fn.strcharpart(line, i, 1))
+                    and not words[vim.fn.strcharpart(line, i, 1)]
+                do
+                    i = i + 1
+                end
+            else
+                -- A normal word
+                local length = 1
+                while
+                    i + length < line_len
+                    and not is_separator(vim.fn.strcharpart(line, i + length, 1))
+                    and not words[vim.fn.strcharpart(line, i + length, 1)]
+                do
+                    length = length + 1
+                end
+                current_range = {
+                    row = row,
+                    col = i + 1, -- convert to 1-indexed
+                    length = length,
+                }
+                i = i + length
+            end
+        end
+        if current_range then table.insert(ranges, current_range) end
+    end
+    return ranges
+end
+
+--- @return integer, integer
+function utils.get_end_of_file()
+    local line_count = vim.api.nvim_buf_line_count(0)
+    local last_line = vim.api.nvim_buf_get_lines(0, line_count - 1, line_count, false)[1] or ''
+    local last_line_len = vim.fn.strchars(last_line)
+    if last_line_len == 0 then last_line_len = 1 end
+    return line_count, last_line_len
+end
+
+--- @param a non-ascii.MatchRange
+--- @param b non-ascii.MatchRange
+function utils.has_separator_between(a, b)
+    if utils.cursor_pos_compare(a.row, a.col, b.row, b.col) > 0 then
+        return utils.has_separator_between(b, a)
+    end
+    local a_row_end, a_col_end = utils.cursor_pos_after_move(a.row, a.col, a.length)
+    return utils.cursor_pos_compare(a_row_end, a_col_end, b.row, b.col) ~= 0
+end
+
+function utils.is_visual() return vim.api.nvim_get_mode().mode:match('[vV\22]') ~= nil end
+
+--- @return integer?, integer?
+function utils.get_visual_start_pos()
+    if not utils.is_visual() then return nil, nil end
+    local pos = vim.fn.getcharpos('v')
+    return pos[2], pos[3] -- row, col
+end
+
+function utils.is_reverse_visual()
+    if not utils.is_visual() then return false end
+    local _, row, col, _, _ = unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
+    local pos = vim.fn.getcharpos('v')
+    local visual_start_row, visual_start_col = pos[2], pos[3]
+    return utils.cursor_pos_compare(visual_start_row, visual_start_col, row, col) > 0
+end
+
+function utils.is_operator() return vim.api.nvim_get_mode().mode:match('o') ~= nil end
 
 return utils
