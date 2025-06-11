@@ -389,114 +389,67 @@ local function internal_get_cursor_pos(row, col, action, is_separator, preferred
 end
 
 local function get_cursor_pos(row, col, action, is_separator, preferred_jump_length, words)
-    if action == 'iw' or action == 'aw' then
-        local tmp_row_1, tmp_col_1
-        local tmp_row_2, tmp_col_2
-        local tmp_row_3, tmp_col_3
-        if utils.is_reverse_visual() then
-            tmp_row_1, tmp_col_1 =
-                internal_get_cursor_pos(row, col, 'b', is_separator, preferred_jump_length, words)
-            tmp_row_2, tmp_col_2 =
-                internal_get_cursor_pos(row, col, 'ge', is_separator, preferred_jump_length, words)
-            tmp_row_2, tmp_col_2 = utils.cursor_pos_after_move(tmp_row_2, tmp_col_2, 1)
-            if
-                action == 'aw'
-                and utils.cursor_pos_compare(tmp_row_1, tmp_col_1, row, col) == 0
-                and utils.cursor_pos_compare(tmp_row_2, tmp_col_2, row, col) == 0
-            then
-                tmp_row_3, tmp_col_3 = internal_get_cursor_pos(
-                    row,
-                    col,
-                    'ge',
-                    is_separator,
-                    preferred_jump_length,
-                    words
-                )
-                tmp_row_3, tmp_col_3 = internal_get_cursor_pos(
-                    tmp_row_3,
-                    tmp_col_3,
-                    'ge',
-                    is_separator,
-                    preferred_jump_length,
-                    words
-                )
-                tmp_row_3, tmp_col_3 = utils.cursor_pos_after_move(tmp_row_3, tmp_col_3, 1)
-            end
-        else
-            tmp_row_1, tmp_col_1 =
-                internal_get_cursor_pos(row, col, 'e', is_separator, preferred_jump_length, words)
-            tmp_row_2, tmp_col_2 =
-                internal_get_cursor_pos(row, col, 'w', is_separator, preferred_jump_length, words)
-            tmp_row_2, tmp_col_2 = utils.cursor_pos_after_move(tmp_row_2, tmp_col_2, -1)
-            if
-                action == 'aw'
-                and utils.cursor_pos_compare(tmp_row_1, tmp_col_1, row, col) == 0
-                and utils.cursor_pos_compare(tmp_row_2, tmp_col_2, row, col) == 0
-            then
-                tmp_row_3, tmp_col_3 = internal_get_cursor_pos(
-                    row,
-                    col,
-                    'w',
-                    is_separator,
-                    preferred_jump_length,
-                    words
-                )
-                tmp_row_3, tmp_col_3 = internal_get_cursor_pos(
-                    tmp_row_3,
-                    tmp_col_3,
-                    'w',
-                    is_separator,
-                    preferred_jump_length,
-                    words
-                )
-                tmp_row_3, tmp_col_3 = utils.cursor_pos_after_move(tmp_row_3, tmp_col_3, -1)
-            end
+    --- @param movement non-ascii.WordAction
+    local function get_pos(movement, pos)
+        pos = pos or { row, col }
+        return {
+            internal_get_cursor_pos(
+                pos[1],
+                pos[2],
+                movement,
+                is_separator,
+                preferred_jump_length,
+                words
+            ),
+        }
+    end
+    local candidates = {}
+    -- Check if all candidates match current position
+    local function all_candidates_match()
+        for _, cand in ipairs(candidates) do
+            if utils.cursor_pos_compare(cand[1], cand[2], row, col) ~= 0 then return false end
         end
-        local function selector(comparator)
-            local res_row, res_col
-            if comparator(tmp_row_1, tmp_col_1, tmp_row_2, tmp_col_2) < 0 then
-                res_row, res_col = tmp_row_1, tmp_col_1
+        return true
+    end
+    local function add_candidate(pos, adjustment)
+        adjustment = adjustment or 0
+        local adjusted = { utils.cursor_pos_after_move(pos[1], pos[2], adjustment) }
+        table.insert(candidates, adjusted)
+    end
+    local function select_best_candidate()
+        local function comparator(a, b)
+            -- Handle current position special case
+            if utils.cursor_pos_compare(a[1], a[2], row, col) == 0 then return 1 end
+            if utils.cursor_pos_compare(b[1], b[2], row, col) == 0 then return -1 end
+
+            -- Determine comparison direction based on action and mode
+            local base_compare = utils.cursor_pos_compare(a[1], a[2], b[1], b[2])
+            if action == 'iw' then
+                return utils.is_reverse_visual() and -base_compare or base_compare
             else
-                res_row, res_col = tmp_row_2, tmp_col_2
+                return utils.is_reverse_visual() and base_compare or -base_compare
             end
-            if
-                tmp_row_3
-                and tmp_col_3
-                and comparator(tmp_row_3, tmp_col_3, res_row, res_col) < 0
-            then
-                res_row, res_col = tmp_row_3, tmp_col_3
-            end
-            return res_row, res_col
         end
-        if action == 'iw' then
-            return selector(function(a_row, a_col, b_row, b_col)
-                if utils.cursor_pos_compare(a_row, a_col, row, col) == 0 then
-                    return 1
-                elseif utils.cursor_pos_compare(b_row, b_col, row, col) == 0 then
-                    return -1
-                end
-                if utils.is_reverse_visual() then
-                    return -utils.cursor_pos_compare(a_row, a_col, b_row, b_col)
-                else
-                    return utils.cursor_pos_compare(a_row, a_col, b_row, b_col)
-                end
-            end)
-        else
-            return selector(function(a_row, a_col, b_row, b_col)
-                if utils.cursor_pos_compare(a_row, a_col, row, col) == 0 then
-                    return 1
-                elseif utils.cursor_pos_compare(b_row, b_col, row, col) == 0 then
-                    return -1
-                end
-                if utils.is_reverse_visual() then
-                    return utils.cursor_pos_compare(a_row, a_col, b_row, b_col)
-                else
-                    return -utils.cursor_pos_compare(a_row, a_col, b_row, b_col)
-                end
-            end)
+
+        -- Find best candidate using comparator
+        local best = candidates[1]
+        for i = 2, #candidates do
+            if comparator(candidates[i], best) < 0 then best = candidates[i] end
         end
+        return best[1], best[2]
+    end
+    if action == 'iw' or action == 'aw' then
+        add_candidate(get_pos(utils.is_reverse_visual() and 'b' or 'e'))
+        local ge_or_w_pos = get_pos(utils.is_reverse_visual() and 'ge' or 'w')
+        add_candidate(ge_or_w_pos, utils.is_reverse_visual() and 1 or -1)
+        if action == 'aw' and all_candidates_match() then
+            ge_or_w_pos = get_pos(utils.is_reverse_visual() and 'ge' or 'w', ge_or_w_pos)
+            add_candidate(ge_or_w_pos, utils.is_reverse_visual() and 1 or -1)
+        end
+        return select_best_candidate()
     else
-        return internal_get_cursor_pos(row, col, action, is_separator, preferred_jump_length, words)
+        local pos = get_pos(action)
+        return pos[1], pos[2]
     end
 end
 
