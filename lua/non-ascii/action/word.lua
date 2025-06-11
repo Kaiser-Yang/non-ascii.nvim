@@ -142,6 +142,9 @@ local function get_start_end_pos(row, col, action, is_separator, preferred_jump_
             end
         end
     end
+    -- HACK:
+    -- Not elegant at all, a piece of shit code
+    -- Try to refactor this code
     if not cur then
         if utils.is_reverse_visual() then
             if action == 'iw' then
