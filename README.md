@@ -20,8 +20,8 @@ WIP：
 * 字符的跳转
 * 集成 [flash.nvim](https://github.com/folke/flash.nvim)
 * 支持所以自定义的输入方案，默认提供86五笔，全拼，小鹤双拼。
-    * `non-ascii.inside_sentence`：在句子中。
-    * `non-ascii.around_sentence`：在句子周围，会选中分隔符。
+    * `non-ascii.is`：在句子中。
+    * `non-ascii.as`：在句子周围，会选中分隔符。
 
 ## 快速开始
 
