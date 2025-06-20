@@ -57,7 +57,6 @@ return {
             non_ascii.ge
         )
         vim.keymap.set({ 'n', 'x' }, 'w', next_word, { desc = 'Next word' })
-        vim.keymap.set({ 'n', 'x' }, 'w', next_word, { desc = 'Next word' })
         vim.keymap.set({ 'n', 'x' }, 'b', prev_word, { desc = 'Previous word' })
         vim.keymap.set({ 'n', 'x' }, 'e', next_end_word, { desc = 'Next end word' })
         vim.keymap.set({ 'n', 'x' }, 'ge', prev_end_word, { desc = 'Previous end word' })
@@ -67,8 +66,7 @@ return {
         -- vim.keymap.set({ 'n', 'x' }, 'e', non_ascii.e, { desc = 'Next end word' })
         -- vim.keymap.set({ 'n', 'x' }, 'ge', non_ascii.ge, { desc = 'Previous end word' })
 
-        -- 在 operator 模式下，w 的行为和 e 的行为是一样的，
-        vim.keymap.set('o', 'w', non_ascii.e, { desc = 'Next word' })
+        vim.keymap.set('o', 'w', non_ascii.w, { desc = 'Next word' })
         vim.keymap.set('o', 'b', non_ascii.b, { desc = 'Previous word' })
         vim.keymap.set('o', 'e', non_ascii.e, { desc = 'Next end word' })
         vim.keymap.set('o', 'ge', non_ascii.ge, { desc = 'Previous end word' })
