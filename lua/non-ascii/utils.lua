@@ -157,10 +157,7 @@ function utils.split_line(row, is_separator, preffered_jump_length, words)
         end
         if not current_range then
             if is_separator(vim.fn.strcharpart(line, i)) then
-                while
-                    i < line_len
-                    and is_separator(vim.fn.strcharpart(line, i))
-                do
+                while i < line_len and is_separator(vim.fn.strcharpart(line, i)) do
                     i = i + 1
                 end
             else
