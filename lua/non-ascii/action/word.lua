@@ -489,13 +489,13 @@ function word.jump(action, is_separator, preferred_jump_length, words)
             first_time = false
         end
     end
-    local extra_motion = utils.is_operator() and (action == 'e' or action == 'ge')
     while cnt > 0 do
         local new_row, new_col =
             get_cursor_pos(row, col, action, is_separator, preferred_jump_length, words)
         if
             (not utils.is_visual() or not first_time)
                 and utils.cursor_pos_compare(new_row, new_col, row, col) == 0
+                and not (utils.is_operator() and first_time)
             or visual_start_row
                 and visual_start_col
                 and start_row
@@ -520,24 +520,8 @@ function word.jump(action, is_separator, preferred_jump_length, words)
                     or utils.is_reverse_visual() and -1
                     or 1
             )
-            -- We are at the end of the file
-            if utils.cursor_pos_compare(new_row, new_col, row, col) == 0 then
-                extra_motion = true
-                break
-            else
-                extra_motion = false
-            end
-            if not utils.is_operator() or not first_time then
-                new_row, new_col = get_cursor_pos(
-                    new_row,
-                    new_col,
-                    action,
-                    is_separator,
-                    preferred_jump_length,
-                    words
-                )
-                if utils.is_operator() then extra_motion = true end
-            end
+            new_row, new_col =
+                get_cursor_pos(new_row, new_col, action, is_separator, preferred_jump_length, words)
         end
         first_time = false
         row, col = new_row, new_col
@@ -549,8 +533,22 @@ function word.jump(action, is_separator, preferred_jump_length, words)
         vim.fn.setcursorcharpos(start_row, start_col)
         vim.cmd('normal! o')
     end
+    if utils.is_operator() and (action == 'e' or action == 'ge') then
+        local new_row, new_col = utils.cursor_pos_after_move(row, col, 1)
+        if utils.cursor_pos_compare(new_row, new_col, row, col) == 0 then
+            vim.schedule(function()
+                local line = vim.api.nvim_get_current_line()
+                -- Use undojoin here to make sure one undo step can back to the original line
+                vim.cmd("undojoin")
+                vim.api.nvim_set_current_line(
+                    vim.fn.strcharpart(line, 0, vim.fn.strchars(line) - 1)
+                )
+            end)
+        else
+            row, col = new_row, new_col
+        end
+    end
     vim.fn.setcursorcharpos(row, col)
-    if extra_motion then vim.cmd('normal! x') end
 end
 
 return word
