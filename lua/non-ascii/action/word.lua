@@ -31,9 +31,10 @@ local function split_lines(
                 col = line_len,
                 length = 1,
             })
+            -- We must set the next_idx manually here
+            if not next_idx then next_idx = #collect end
         end
     end
-    handle_new_line(line_ranges, row)
     for i, range in ipairs(line_ranges) do
         if range.col <= col and range.col + range.length - 1 >= col then
             cur_idx = i
@@ -43,6 +44,7 @@ local function split_lines(
             next_idx = i
         end
     end
+    handle_new_line(line_ranges, row)
     local line_count, _ = utils.get_end_of_file()
     --- @return non-ascii.MatchRange[]
     local function process_lines(
@@ -462,6 +464,8 @@ end
 --- @param words non-ascii.Words
 function word.jump(action, is_separator, preferred_jump_length, words)
     local _, row, col, _, _ = unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
+    local cur = split_lines(row, col, is_separator, 0, 0, preferred_jump_length, words)[1]
+    local cur_end_row, cur_end_col
     local start_row, start_col
     local visual_start_row, visual_start_col = utils.get_visual_start_pos()
     local cnt = vim.v.count1
@@ -533,13 +537,24 @@ function word.jump(action, is_separator, preferred_jump_length, words)
         vim.fn.setcursorcharpos(start_row, start_col)
         vim.cmd('normal! o')
     end
-    if utils.is_operator() and (action == 'e' or action == 'ge') then
+    if cur then
+        cur_end_row, cur_end_col = utils.cursor_pos_after_move(cur.row, cur.col, cur.length - 1)
+    end
+    if
+        utils.is_operator()
+        and (
+            (action == 'e' or action == 'ge')
+            or cur_end_row
+                and cur_end_col
+                and utils.cursor_pos_compare(row, col, cur_end_row, cur_end_col) == 0
+        )
+    then
         local new_row, new_col = utils.cursor_pos_after_move(row, col, 1)
         if utils.cursor_pos_compare(new_row, new_col, row, col) == 0 then
             vim.schedule(function()
                 local line = vim.api.nvim_get_current_line()
                 -- Use undojoin here to make sure one undo step can back to the original line
-                vim.cmd("undojoin")
+                vim.cmd('undojoin')
                 vim.api.nvim_set_current_line(
                     vim.fn.strcharpart(line, 0, vim.fn.strchars(line) - 1)
                 )
