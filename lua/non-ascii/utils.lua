@@ -132,13 +132,6 @@ function utils.split_line(row, is_separator, preffered_jump_length, words)
     local i = 0
     local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
     local line_len = vim.fn.strchars(line)
-    if line_len == 0 and not is_separator('') then
-        table.insert(ranges, {
-            row = row,
-            col = 1,
-            length = 1,
-        })
-    end
     while i < line_len do
         local current_range --- @as non-ascii.MatchRange
         for _, length in ipairs(preffered_jump_length) do

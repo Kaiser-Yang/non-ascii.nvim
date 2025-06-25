@@ -22,29 +22,24 @@ local function split_lines(
     local prev_idx, cur_idx, next_idx
     local line_ranges = utils.split_line(row, is_separator, preferred_jump_length, words)
     local function handle_new_line(collect, row_num)
-        if not is_separator('\n') then
-            local line = vim.api.nvim_buf_get_lines(0, row_num - 1, row_num, false)[1] or ''
-            local line_len = vim.fn.strchars(line) + (utils.is_visual() and 1 or 0)
-            if line_len == 0 then line_len = 1 end
+        if not is_separator('\n') and row_num < vim.api.nvim_buf_line_count(0) then
             table.insert(collect, {
-                row = row_num,
-                col = line_len,
+                row = row_num + 1,
+                col = 1,
                 length = 1,
             })
-            -- We must set the next_idx manually here
-            if not next_idx then next_idx = #collect end
-        end
-    end
-    for i, range in ipairs(line_ranges) do
-        if range.col <= col and range.col + range.length - 1 >= col then
-            cur_idx = i
-        elseif range.col + range.length - 1 < col then
-            prev_idx = i
-        elseif not next_idx and range.col > col then
-            next_idx = i
         end
     end
     handle_new_line(line_ranges, row)
+    for i, range in ipairs(line_ranges) do
+        if range.row == row and range.col <= col and range.col + range.length - 1 >= col then
+            cur_idx = i
+        elseif range.row == row and range.col + range.length - 1 < col then
+            prev_idx = i
+        elseif not next_idx and (range.row == row and range.col > col or range.row > row) then
+            next_idx = i
+        end
+    end
     local line_count, _ = utils.get_end_of_file()
     --- @return non-ascii.MatchRange[]
     local function process_lines(
@@ -96,10 +91,8 @@ local function split_lines(
     end
     res[before_limit + 1] = cur_idx and line_ranges[cur_idx] or nil
     for i = 1, after_limit do
+        if after_ranges[i] == '' then break end
         res[before_limit + 1 + i] = after_ranges[i]
-    end
-    for i = 1, #res do
-        if res[i] == '' then res[i] = nil end
     end
     return res
 end
@@ -464,8 +457,6 @@ end
 --- @param words non-ascii.Words
 function word.jump(action, is_separator, preferred_jump_length, words)
     local _, row, col, _, _ = unpack(vim.fn.getcursorcharpos(vim.api.nvim_get_current_win()))
-    local cur = split_lines(row, col, is_separator, 0, 0, preferred_jump_length, words)[1]
-    local cur_end_row, cur_end_col
     local start_row, start_col
     local visual_start_row, visual_start_col = utils.get_visual_start_pos()
     local cnt = vim.v.count1
@@ -537,17 +528,10 @@ function word.jump(action, is_separator, preferred_jump_length, words)
         vim.fn.setcursorcharpos(start_row, start_col)
         vim.cmd('normal! o')
     end
-    if cur then
-        cur_end_row, cur_end_col = utils.cursor_pos_after_move(cur.row, cur.col, cur.length - 1)
-    end
+    local eof_row, eof_col = utils.get_end_of_file()
     if
-        utils.is_operator()
-        and (
-            (action == 'e' or action == 'ge')
-            or cur_end_row
-                and cur_end_col
-                and utils.cursor_pos_compare(row, col, cur_end_row, cur_end_col) == 0
-        )
+        utils.is_operator() and (action == 'e' or action == 'ge')
+        or utils.cursor_pos_compare(row, col, eof_row, eof_col) == 0
     then
         local new_row, new_col = utils.cursor_pos_after_move(row, col, 1)
         if utils.cursor_pos_compare(new_row, new_col, row, col) == 0 then
