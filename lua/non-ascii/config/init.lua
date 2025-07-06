@@ -14,6 +14,7 @@ local special_words = {
     ['+'] = true,
     ['++'] = true,
     ['/'] = true,
+    ['//'] = true,
     ['\\'] = true,
     ['='] = true,
     [','] = true,
