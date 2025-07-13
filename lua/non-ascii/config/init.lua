@@ -17,6 +17,9 @@ local special_words = {
     ['//'] = true,
     ['\\'] = true,
     ['='] = true,
+    ['=='] = true,
+    ['!='] = true,
+    ['~='] = true,
     [','] = true,
     ['.'] = true,
     ['...'] = true,
@@ -36,6 +39,8 @@ local special_words = {
     ['}'] = true,
     ['<'] = true,
     ['>'] = true,
+    ['<='] = true,
+    ['>='] = true,
     -- Chinese punctuation marks
     ['，'] = true,
     ['。'] = true,
