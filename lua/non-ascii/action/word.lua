@@ -40,7 +40,7 @@ local function split_lines(
             next_idx = i
         end
     end
-    local line_count, _ = utils.get_end_of_file()
+    local line_count, last_line_length = utils.get_end_of_file()
     --- @return non-ascii.MatchRange[]
     local function process_lines(
         start,
@@ -87,11 +87,24 @@ local function split_lines(
     local before_ranges = process_lines(row - 1, 1, -1, before_limit, true, true, prev_idx)
     local after_ranges = process_lines(row + 1, line_count, 1, after_limit, false, false, next_idx)
     for i = 1, before_limit do
+        if before_ranges[i] == '' then
+            before_ranges[i] = {
+                row = 1,
+                col = 1,
+                length = 1,
+            }
+        end
         res[i] = before_ranges[i]
     end
     res[before_limit + 1] = cur_idx and line_ranges[cur_idx] or nil
     for i = 1, after_limit do
-        if after_ranges[i] == '' then break end
+        if after_ranges[i] == '' then
+            after_ranges[i] = {
+                row = line_count,
+                col = last_line_length,
+                length = 1,
+            }
+        end
         res[before_limit + 1 + i] = after_ranges[i]
     end
     return res
@@ -530,8 +543,11 @@ function word.jump(action, is_separator, preferred_jump_length, words)
     end
     local eof_row, eof_col = utils.get_end_of_file()
     if
-        utils.is_operator() and (action == 'e' or action == 'ge')
-        or utils.cursor_pos_compare(row, col, eof_row, eof_col) == 0
+        utils.is_operator()
+        and (
+            (action == 'e' or action == 'ge')
+            or utils.cursor_pos_compare(row, col, eof_row, eof_col) == 0
+        )
     then
         local new_row, new_col = utils.cursor_pos_after_move(row, col, 1)
         if utils.cursor_pos_compare(new_row, new_col, row, col) == 0 then
