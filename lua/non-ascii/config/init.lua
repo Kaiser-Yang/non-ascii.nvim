@@ -1,8 +1,10 @@
 local utils = require('non-ascii.utils')
+-- Some special words that are not in the word files
 local special_words = {
     -- English punctuation marks, this is usefull when you use 'cw' on a punctuation mark
     ['-'] = true,
     ['--'] = true,
+    ['---'] = true,
     ['_'] = true,
     ['@'] = true,
     ['#'] = true,
@@ -86,9 +88,7 @@ local special_words = {
     ['～'] = true,
 }
 local function is_word_separator(str, consider_newline)
-    if str == '\n' then
-        return consider_newline and not utils.is_operator()
-    end
+    if str == '\n' then return consider_newline and not utils.is_operator() end
     return #str > 0 and not str:match('^[%w]') and not special_words[vim.fn.strcharpart(str, 0, 1)]
 end
 
@@ -105,7 +105,6 @@ return {
             iw = { is_separator = function(str) return is_word_separator(str, false) end },
             aw = { is_separator = function(str) return is_word_separator(str, false) end },
         },
-        -- Some special words that are not in the word files
         words = special_words,
     },
 }
