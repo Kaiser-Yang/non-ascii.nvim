@@ -15,6 +15,8 @@ function non_ascii.setup(opts)
     )
 end
 
+function non_ascii.get_config() return current_config end
+
 function non_ascii.w()
     word_action.jump(
         'w',

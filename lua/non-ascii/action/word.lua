@@ -473,6 +473,10 @@ function word.jump(action, is_separator, preferred_jump_length, words)
     local start_row, start_col
     local visual_start_row, visual_start_col = utils.get_visual_start_pos()
     local cnt = vim.v.count1
+    if cnt > require('non-ascii').get_config().word.count_limit then
+        vim.cmd('normal! ' .. cnt .. action)
+        return
+    end
     local first_time = true
     if action == 'iw' or action == 'aw' then
         local end_row, end_col
